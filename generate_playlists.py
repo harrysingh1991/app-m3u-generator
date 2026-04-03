@@ -379,71 +379,68 @@ def generate_custom_amalgamated_m3u():
     import os
     import re
 
-    print(f"--- Starting Custom Amalgamation (Full EPG Mode) ---")
+    print(f"--- Starting Final Amalgamation (Target: {CUSTOM_FILENAME}) ---")
     seen_ids = set()
     groups_dict = {}
     epg_url = ""
 
-    # --- NEW LOGIC: Get the 'All' EPG link first for maximum coverage ---
-    all_playlist_path = "playlists/plutotv_all.m3u"
-    if os.path.exists(all_playlist_path):
-        with open(all_playlist_path, 'r', encoding='utf-8') as f:
+    # 1. Prioritize 'all' file for the EPG link
+    all_path = "playlists/plutotv_all.m3u"
+    if os.path.exists(all_path):
+        with open(all_path, 'r', encoding='utf-8') as f:
             first_line = f.readline()
-            match_epg = re.search(r'x-tvg-url=["\']([^"\']+)["\']', first_line)
+            # BROAD REGEX: Matches 'url-tvg=' OR 'x-tvg-url='
+            match_epg = re.search(r'(?:url-tvg|x-tvg-url)=["\']([^"\']+)["\']', first_line)
             if match_epg:
                 epg_url = match_epg.group(1)
-                print(f"Using Master EPG URL: {epg_url}")
+                print(f"Success! Found Master EPG: {epg_url}")
 
-    # Now process your priority regions
+    # 2. Process Regions
     for region in MY_REGIONS:
         file_path = f"playlists/plutotv_{region}.m3u"
-        
         if not os.path.exists(file_path):
             continue
 
         with open(file_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
 
-        # If we didn't find the 'all' EPG, fallback to the first region's EPG
-        if not epg_url and lines[0].startswith("#EXTM3U"):
-            match_epg = re.search(r'x-tvg-url=["\']([^"\']+)["\']', lines[0])
-            if match_epg:
-                epg_url = match_epg.group(1)
+        # Fallback EPG search if 'all' was missing
+        if not epg_url and lines:
+            match_fallback = re.search(r'(?:url-tvg|x-tvg-url)=["\']([^"\']+)["\']', lines[0])
+            if match_fallback:
+                epg_url = match_fallback.group(1)
 
         for i in range(len(lines)):
             if lines[i].startswith("#EXTINF"):
                 id_match = re.search(r'tvg-id=["\']([^"\']+)["\']', lines[i])
                 if id_match:
-                    channel_id = id_match.group(1)
-                    if channel_id not in seen_ids:
-                        seen_ids.add(channel_id)
+                    cid = id_match.group(1)
+                    if cid not in seen_ids:
+                        seen_ids.add(cid)
                         
-                        group_match = re.search(r'group-title=["\']([^"\']+)["\']', lines[i])
-                        group_name = group_match.group(1) if group_match else "Uncategorized"
+                        g_match = re.search(r'group-title=["\']([^"\']+)["\']', lines[i])
+                        g_name = g_match.group(1) if g_match else "Uncategorized"
                         
-                        if group_name not in groups_dict:
-                            groups_dict[group_name] = []
+                        if g_name not in groups_dict:
+                            groups_dict[g_name] = []
                         
-                        groups_dict[group_name].append(lines[i])
+                        groups_dict[g_name].append(lines[i])
                         if i + 1 < len(lines):
-                            groups_dict[group_name].append(lines[i+1])
+                            groups_dict[g_name].append(lines[i+1])
 
-    # Build Header
-    header = "#EXTM3U"
-    if epg_url:
-        header += f' x-tvg-url="{epg_url}"'
-    
+    # 3. Build the Header correctly
+    # We use 'url-tvg' to match the source style, or you can use 'x-tvg-url'
+    header = f'#EXTM3U url-tvg="{epg_url}"' if epg_url else "#EXTM3U"
     output_content = [header + "\n"]
     
-    # Sort and Write
-    sorted_group_names = sorted(groups_dict.keys())
-    for group in sorted_group_names:
+    # 4. Sort Groups and Write
+    for group in sorted(groups_dict.keys()):
         output_content.extend(groups_dict[group])
 
     with open(CUSTOM_FILENAME, 'w', encoding='utf-8') as f:
         f.writelines(output_content)
     
-    print(f"--- SUCCESS: Created {CUSTOM_FILENAME} with Master EPG ---")
+    print(f"--- Finished! Created {CUSTOM_FILENAME} with {len(seen_ids)} channels. ---")
 
 # --- Execution ---
 
