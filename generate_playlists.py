@@ -24,7 +24,8 @@ USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 REQUEST_TIMEOUT = 30 
 
 REGION_MAP = {
-    'us': 'United States', 'gb': 'United Kingdom', 'ca': 'Canada',
+    'us': 'United States', 'gb': 'United Kingdom', 'ca': 'Canada',
+
 }
 
 TOP_REGIONS = ['United States', 'Canada', 'United Kingdom']
@@ -369,6 +370,52 @@ def generate_tubi_m3u():
         write_m3u_file("tubi_all.m3u", m3u_playlist)
         epg_tree.write(os.path.join(OUTPUT_DIR, "tubi_epg.xml"), encoding='utf-8', xml_declaration=True)
 
+# --- CUSTOM AMALGAMATION SETTINGS ---
+# Define your priority regions here. First in list = Highest priority.
+MY_REGIONS = ['gb', 'ca', 'us'] 
+CUSTOM_FILENAME = 'playlists/pluto_custom.m3u'
+# ------------------------------------
+
+def generate_custom_amalgamated_m3u():
+    import os
+    import re
+
+    print(f"Starting custom amalgamation for regions: {MY_REGIONS}")
+    seen_ids = set()
+    output_content = ["#EXTM3U\n"]
+
+    for region in MY_REGIONS:
+        file_path = f"playlists/pluto_{region}.m3u"
+        
+        if not os.path.exists(file_path):
+            print(f"Warning: {file_path} not found. Skipping...")
+            continue
+
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+
+        # Iterate through lines to find #EXTINF and the following URL
+        for i in range(len(lines)):
+            if lines[i].startswith("#EXTINF"):
+                # Extract tvg-id using regex
+                match = re.search(r'tvg-id="([^"]+)"', lines[i])
+                if match:
+                    channel_id = match.group(1)
+                    
+                    # Deduplication Logic: Only add if we haven't seen this ID yet
+                    if channel_id not in seen_ids:
+                        seen_ids.add(channel_id)
+                        # Add the #EXTINF line and the immediate next line (the URL)
+                        output_content.append(lines[i])
+                        if i + 1 < len(lines):
+                            output_content.append(lines[i+1])
+
+    # Write the final amalgamated file
+    with open(CUSTOM_FILENAME, 'w', encoding='utf-8') as f:
+        f.writelines(output_content)
+    
+    print(f"Successfully created {CUSTOM_FILENAME} with {len(seen_ids)} unique channels.")
+
 # --- Execution ---
 
 if __name__ == "__main__":
@@ -378,4 +425,4 @@ if __name__ == "__main__":
     generate_samsungtvplus_m3u()
     generate_tubi_m3u()
     generate_roku_m3u()
-
+    generate_custom_amalgamated_m3u()
