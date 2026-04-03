@@ -371,8 +371,7 @@ def generate_tubi_m3u():
         epg_tree.write(os.path.join(OUTPUT_DIR, "tubi_epg.xml"), encoding='utf-8', xml_declaration=True)
 
 # --- CUSTOM AMALGAMATION SETTINGS ---
-# Define your priority regions here. First in list = Highest priority.
-MY_REGIONS = ['gb', 'ca', 'us'] 
+MY_REGIONS = ['gb', 'us', 'ca'] 
 CUSTOM_FILENAME = 'playlists/pluto_custom.m3u'
 # ------------------------------------
 
@@ -380,41 +379,40 @@ def generate_custom_amalgamated_m3u():
     import os
     import re
 
-    print(f"Starting custom amalgamation for regions: {MY_REGIONS}")
+    print(f"--- Starting Custom Amalgamation (Target: {CUSTOM_FILENAME}) ---")
     seen_ids = set()
     output_content = ["#EXTM3U\n"]
 
     for region in MY_REGIONS:
-        file_path = f"playlists/pluto_{region}.m3u"
+        # Fixed filename pattern: plutotv_XX.m3u
+        file_path = f"playlists/plutotv_{region}.m3u"
         
         if not os.path.exists(file_path):
-            print(f"Warning: {file_path} not found. Skipping...")
+            print(f"SKIP: {file_path} not found.")
             continue
 
         with open(file_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
+            print(f"PROCESSING: {file_path} ({len(lines)} lines)")
 
-        # Iterate through lines to find #EXTINF and the following URL
         for i in range(len(lines)):
             if lines[i].startswith("#EXTINF"):
-                # Extract tvg-id using regex
-                match = re.search(r'tvg-id="([^"]+)"', lines[i])
+                # Matches tvg-id="id" or tvg-id='id'
+                match = re.search(r'tvg-id=["\']([^"\']+)["\']', lines[i])
+                
                 if match:
                     channel_id = match.group(1)
-                    
-                    # Deduplication Logic: Only add if we haven't seen this ID yet
                     if channel_id not in seen_ids:
                         seen_ids.add(channel_id)
-                        # Add the #EXTINF line and the immediate next line (the URL)
                         output_content.append(lines[i])
+                        # Append the URL line immediately following the #EXTINF
                         if i + 1 < len(lines):
                             output_content.append(lines[i+1])
 
-    # Write the final amalgamated file
     with open(CUSTOM_FILENAME, 'w', encoding='utf-8') as f:
         f.writelines(output_content)
     
-    print(f"Successfully created {CUSTOM_FILENAME} with {len(seen_ids)} unique channels.")
+    print(f"--- SUCCESS: Created {CUSTOM_FILENAME} with {len(seen_ids)} channels ---")
 
 # --- Execution ---
 
