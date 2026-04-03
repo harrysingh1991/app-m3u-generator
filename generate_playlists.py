@@ -379,35 +379,48 @@ def generate_custom_amalgamated_m3u():
     import os
     import re
 
-    print(f"--- Starting Sorted Amalgamation (Target: {CUSTOM_FILENAME}) ---")
+    print(f"--- Starting Custom Amalgamation (Full EPG Mode) ---")
     seen_ids = set()
-    # Use a dictionary to store channels by group: { "Movies": ["line1", "line2"...], "News": [...] }
     groups_dict = {}
+    epg_url = ""
 
+    # --- NEW LOGIC: Get the 'All' EPG link first for maximum coverage ---
+    all_playlist_path = "playlists/plutotv_all.m3u"
+    if os.path.exists(all_playlist_path):
+        with open(all_playlist_path, 'r', encoding='utf-8') as f:
+            first_line = f.readline()
+            match_epg = re.search(r'x-tvg-url=["\']([^"\']+)["\']', first_line)
+            if match_epg:
+                epg_url = match_epg.group(1)
+                print(f"Using Master EPG URL: {epg_url}")
+
+    # Now process your priority regions
     for region in MY_REGIONS:
         file_path = f"playlists/plutotv_{region}.m3u"
         
         if not os.path.exists(file_path):
-            print(f"SKIP: {file_path} not found.")
             continue
 
         with open(file_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
 
+        # If we didn't find the 'all' EPG, fallback to the first region's EPG
+        if not epg_url and lines[0].startswith("#EXTM3U"):
+            match_epg = re.search(r'x-tvg-url=["\']([^"\']+)["\']', lines[0])
+            if match_epg:
+                epg_url = match_epg.group(1)
+
         for i in range(len(lines)):
             if lines[i].startswith("#EXTINF"):
-                # 1. Deduplication Check
                 id_match = re.search(r'tvg-id=["\']([^"\']+)["\']', lines[i])
                 if id_match:
                     channel_id = id_match.group(1)
                     if channel_id not in seen_ids:
                         seen_ids.add(channel_id)
                         
-                        # 2. Group Extraction
                         group_match = re.search(r'group-title=["\']([^"\']+)["\']', lines[i])
                         group_name = group_match.group(1) if group_match else "Uncategorized"
                         
-                        # 3. Store in dictionary
                         if group_name not in groups_dict:
                             groups_dict[group_name] = []
                         
@@ -415,20 +428,22 @@ def generate_custom_amalgamated_m3u():
                         if i + 1 < len(lines):
                             groups_dict[group_name].append(lines[i+1])
 
-    # 4. Sorting and Writing
-    output_content = ["#EXTM3U\n"]
+    # Build Header
+    header = "#EXTM3U"
+    if epg_url:
+        header += f' x-tvg-url="{epg_url}"'
     
-    # Sort the group names alphabetically
+    output_content = [header + "\n"]
+    
+    # Sort and Write
     sorted_group_names = sorted(groups_dict.keys())
-    
     for group in sorted_group_names:
-        # This adds all channels belonging to this group
         output_content.extend(groups_dict[group])
 
     with open(CUSTOM_FILENAME, 'w', encoding='utf-8') as f:
         f.writelines(output_content)
     
-    print(f"--- SUCCESS: Created Sorted Playlist with {len(seen_ids)} channels and {len(sorted_group_names)} groups ---")
+    print(f"--- SUCCESS: Created {CUSTOM_FILENAME} with Master EPG ---")
 
 # --- Execution ---
 
