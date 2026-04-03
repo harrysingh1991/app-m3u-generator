@@ -24,12 +24,7 @@ USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 REQUEST_TIMEOUT = 30 
 
 REGION_MAP = {
-    'us': 'United States', 'gb': 'United Kingdom', 'ca': 'Canada',
-    'de': 'Germany', 'at': 'Austria', 'ch': 'Switzerland',
-    'es': 'Spain', 'fr': 'France', 'it': 'Italy', 'br': 'Brazil',
-    'mx': 'Mexico', 'ar': 'Argentina', 'cl': 'Chile', 'co': 'Colombia',
-    'pe': 'Peru', 'se': 'Sweden', 'no': 'Norway', 'dk': 'Denmark',
-    'in': 'India', 'jp': 'Japan', 'kr': 'South Korea', 'au': 'Australia'
+    'us': 'United States', 'gb': 'United Kingdom', 'ca': 'Canada',
 }
 
 TOP_REGIONS = ['United States', 'Canada', 'United Kingdom']
