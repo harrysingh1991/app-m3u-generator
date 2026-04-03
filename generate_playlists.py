@@ -379,12 +379,12 @@ def generate_custom_amalgamated_m3u():
     import os
     import re
 
-    print(f"--- Starting Custom Amalgamation (Target: {CUSTOM_FILENAME}) ---")
+    print(f"--- Starting Sorted Amalgamation (Target: {CUSTOM_FILENAME}) ---")
     seen_ids = set()
-    output_content = ["#EXTM3U\n"]
+    # Use a dictionary to store channels by group: { "Movies": ["line1", "line2"...], "News": [...] }
+    groups_dict = {}
 
     for region in MY_REGIONS:
-        # Fixed filename pattern: plutotv_XX.m3u
         file_path = f"playlists/plutotv_{region}.m3u"
         
         if not os.path.exists(file_path):
@@ -393,26 +393,42 @@ def generate_custom_amalgamated_m3u():
 
         with open(file_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
-            print(f"PROCESSING: {file_path} ({len(lines)} lines)")
 
         for i in range(len(lines)):
             if lines[i].startswith("#EXTINF"):
-                # Matches tvg-id="id" or tvg-id='id'
-                match = re.search(r'tvg-id=["\']([^"\']+)["\']', lines[i])
-                
-                if match:
-                    channel_id = match.group(1)
+                # 1. Deduplication Check
+                id_match = re.search(r'tvg-id=["\']([^"\']+)["\']', lines[i])
+                if id_match:
+                    channel_id = id_match.group(1)
                     if channel_id not in seen_ids:
                         seen_ids.add(channel_id)
-                        output_content.append(lines[i])
-                        # Append the URL line immediately following the #EXTINF
+                        
+                        # 2. Group Extraction
+                        group_match = re.search(r'group-title=["\']([^"\']+)["\']', lines[i])
+                        group_name = group_match.group(1) if group_match else "Uncategorized"
+                        
+                        # 3. Store in dictionary
+                        if group_name not in groups_dict:
+                            groups_dict[group_name] = []
+                        
+                        groups_dict[group_name].append(lines[i])
                         if i + 1 < len(lines):
-                            output_content.append(lines[i+1])
+                            groups_dict[group_name].append(lines[i+1])
+
+    # 4. Sorting and Writing
+    output_content = ["#EXTM3U\n"]
+    
+    # Sort the group names alphabetically
+    sorted_group_names = sorted(groups_dict.keys())
+    
+    for group in sorted_group_names:
+        # This adds all channels belonging to this group
+        output_content.extend(groups_dict[group])
 
     with open(CUSTOM_FILENAME, 'w', encoding='utf-8') as f:
         f.writelines(output_content)
     
-    print(f"--- SUCCESS: Created {CUSTOM_FILENAME} with {len(seen_ids)} channels ---")
+    print(f"--- SUCCESS: Created Sorted Playlist with {len(seen_ids)} channels and {len(sorted_group_names)} groups ---")
 
 # --- Execution ---
 
