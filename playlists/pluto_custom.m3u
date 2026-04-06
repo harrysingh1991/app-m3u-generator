@@ -1445,6 +1445,8 @@ https://jmp2.uk/plu-6400f731d200410008f9b339.m3u8
 https://jmp2.uk/plu-65c69ee3d77d450008c80438.m3u8
 #EXTINF:-1 channel-id="5a74b8e1e22a61737979c6bf" tvg-id="5a74b8e1e22a61737979c6bf" tvg-chno="2790" tvg-name="FOX Sports" tvg-logo="https://images.pluto.tv/channels/5a74b8e1e22a61737979c6bf/colorLogoPNG.png" group-title="Sports",FOX Sports
 https://jmp2.uk/plu-5a74b8e1e22a61737979c6bf.m3u8
+#EXTINF:-1 channel-id="6903f5e3b573e6b45cbf5508" tvg-id="6903f5e3b573e6b45cbf5508" tvg-chno="2757" tvg-name="FanDuel Sports Network NOW" tvg-logo="https://images.pluto.tv/channels/6903f5e3b573e6b45cbf5508/colorLogoPNG_1762283503707.png" group-title="Sports",FanDuel Sports Network NOW
+https://jmp2.uk/plu-6903f5e3b573e6b45cbf5508.m3u8
 #EXTINF:-1 channel-id="650b68bc2ce8e40008ac9c14" tvg-id="650b68bc2ce8e40008ac9c14" tvg-chno="3003" tvg-name="FanDuel TV Extra" tvg-logo="https://images.pluto.tv/channels/650b68bc2ce8e40008ac9c14/colorLogoPNG_1744930668027.png" group-title="Sports",FanDuel TV Extra
 https://jmp2.uk/plu-650b68bc2ce8e40008ac9c14.m3u8
 #EXTINF:-1 channel-id="5417a212ff9fba68282fbf5e" tvg-id="5417a212ff9fba68282fbf5e" tvg-chno="2885" tvg-name="GLORY Kickboxing" tvg-logo="https://images.pluto.tv/channels/5417a212ff9fba68282fbf5e/colorLogoPNG.png" group-title="Sports",GLORY Kickboxing
